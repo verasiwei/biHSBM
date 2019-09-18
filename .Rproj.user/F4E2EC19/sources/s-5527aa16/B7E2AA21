@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1568824621851.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "B7E2AA21",
+    "lastKnownWriteTime" : 1568841293,
+    "last_content_update" : 1568841293190,
+    "path" : "~/sbmSC/R/create_affinity.R",
+    "project_path" : "R/create_affinity.R",
+    "properties" : {
+        "cursorPosition" : "12,31",
+        "scrollLine" : "28",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

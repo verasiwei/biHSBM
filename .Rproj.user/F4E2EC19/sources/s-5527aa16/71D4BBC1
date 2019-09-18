@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1568831812256.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "71D4BBC1",
+    "lastKnownWriteTime" : 1568844455,
+    "last_content_update" : 1568844455708,
+    "path" : "~/sbmSC/R/partition_tree.R",
+    "project_path" : "R/partition_tree.R",
+    "properties" : {
+        "cursorPosition" : "136,79",
+        "scrollLine" : "123",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
