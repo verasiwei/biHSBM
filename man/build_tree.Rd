@@ -4,10 +4,10 @@
 \alias{build_tree}
 \title{Using non-backtracking strategy for stopping rule and build the tree}
 \usage{
-build_tree(adj, xi.loc.labels, ncl, cl.labels, n.min = 25, D = NULL)
+build_tree(f, xi.loc.labels, ncl, cl.labels, n.min = 25, D = NULL)
 }
 \arguments{
-\item{adj}{It is the adjencency matrix}
+\item{f}{It is the adjencency matrix}
 
 \item{xi.loc.labels}{lists of index of each cluster}
 
@@ -15,9 +15,12 @@ build_tree(adj, xi.loc.labels, ncl, cl.labels, n.min = 25, D = NULL)
 
 \item{cl.labels}{a vector of index of individuals}
 }
+\value{
+Lists of cluster results
+}
 \description{
 \code{build_tree} returns a dataframe
 }
 \examples{
-cluster_result <- build_tree(f=adj,xi.loc.labels=list(), ncl=0, cl.labels=1:339,n.min=25,D=NULL)
+cluster_result <- build_tree(adj,xi.loc.labels=list(), ncl=0, cl.labels=1:339,n.min=25,D=NULL)
 }

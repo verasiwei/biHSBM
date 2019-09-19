@@ -2,30 +2,15 @@
 #'
 #' \code{build_tree} returns a dataframe
 #'
-#' @param adj It is the adjencency matrix
+#' @param f It is the adjencency matrix
 #' @param xi.loc.labels lists of index of each cluster
 #' @param ncl number of clusters
 #' @param cl.labels a vector of index of individuals
-#' @return
+#' @return Lists of cluster results
 #' @examples
-#' cluster_result <- build_tree(f=adj,xi.loc.labels=list(), ncl=0, cl.labels=1:339,n.min=25,D=NULL)
+#' cluster_result <- build_tree(adj,xi.loc.labels=list(), ncl=0, cl.labels=1:339,n.min=25,D=NULL)
 
-build_tree <- function(adj,xi.loc.labels, ncl, cl.labels,n.min=25,D=NULL){
-
-  NB.check <- function(A){
-    d <- colSums(A)
-    n <- nrow(A)
-    I <- as(diag(rep(1,n)),"dgCMatrix")
-    D <- as(diag(d),"dgCMatrix")
-    r <- sqrt(sum(d^2)/sum(d)-1)
-    B <- as(matrix(0,nrow=2*n,ncol=2*n),"dgCMatrix")
-    B[(n+1):(2*n),1:n] <- -1*I
-    B[1:n,(n+1):(2*n)] <- D-I
-    B[(n+1):(2*n),(n+1):(2*n)] <- A
-    ss <- Re(eigs(B,k=2,which="LM")$values)
-    return(sum(abs(ss)>r)>1)
-  }
-
+build_tree <- function(f,xi.loc.labels, ncl, cl.labels,n.min=25,D=NULL){
   nisol = which(rowSums(f) > 0)
   isol = which(rowSums(f) == 0)
   cl.labels.full <- cl.labels
@@ -48,17 +33,28 @@ build_tree <- function(adj,xi.loc.labels, ncl, cl.labels,n.min=25,D=NULL){
   n1 = dim(f)[1]
 
   K = 2
-  split.flag <- NB.check(f)
+  d <- colSums(f)
+  n <- nrow(f)
+  I <- as(diag(rep(1,n)),"dgCMatrix")
+  D <- as(diag(d),"dgCMatrix")
+  r <- sqrt(sum(d^2)/sum(d)-1)
+  B <- as(matrix(0,nrow=2*n,ncol=2*n),"dgCMatrix")
+  B[(n+1):(2*n),1:n] <- -1*I
+  B[1:n,(n+1):(2*n)] <- D-I
+  B[(n+1):(2*n),(n+1):(2*n)] <- f
+  ss <- Re(eigs(B,k=2,which="LM")$values)
+  split.flag <- sum(abs(ss)>r)>1
   if(split.flag) {
     #f.adj <- f + 3*mean(all.deg)/nrow(f)
-    f.adj <- f + 3*mean(all.deg)/nrow(f)
-    g <- graph_from_adjacency_matrix(as.matrix(f.adj), weighted=T, mode="undirected")
+    #f.adj <- f + 0.1/nrow(f)
+    g <- graph_from_adjacency_matrix(as.matrix(f), weighted=T, mode="undirected")
     g <- simplify(g)
     adj <- get.adjacency(g,type = "both",attr = "weight")
-    deg <- diag(strength(g))
-    #deg.adj <- deg+diag(rep(100,nrow(deg)))
+    deg.adj <- diag(strength(g))+diag(rep(0.1,nrow(f)))
 
-    l_matrix <- solve(sqrtm(deg))%*%f%*%solve(sqrtm(deg))
+    l_matrix <- solve(sqrtm(deg.adj))%*%adj%*%solve(sqrtm(deg.adj))
+    adj <- NULL
+    deg.adj <- NULL
     eval <- eigs_sym(l_matrix,2,which = "LM")
     embed.Y <- data.frame(eval$vectors)
     #embed.Y <- data.frame(embed.s$X[,1:2])

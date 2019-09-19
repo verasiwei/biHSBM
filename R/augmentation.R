@@ -57,10 +57,11 @@ augmentation_matrix <-function(N,M,n,seed,rep,method,bucket,reg_par,var){
         #A <- A+as.numeric(reg_par)/nrow(A)
         g <- graph_from_adjacency_matrix(A, weighted=T, mode="undirected")
         g <- simplify(g)
-        #adj <- get.adjacency(g,type = "both",attr = "weight")
-        deg.adj <- diag(strength(g))+diag(rep(reg_par,nrow(A)))
-        adj.adj <- A+as.numeric(reg_par)/nrow(A)
-        diag(adj.adj) <- 0
+        A <- NULL
+        adj <- get.adjacency(g,type = "both",attr = "weight")
+        deg.adj <- diag(strength(g))+diag(rep(as.numeric(reg_par),nrow(A)))
+        adj.adj <- adj+as.numeric(reg_par)/nrow(A)
+        #diag(adj.adj) <- 0
         eval <- eigs_sym(adj.adj,2,which = "LM")
         embed.eigen[[k]] <- ifelse(eval$vectors[,2]<0,1,2)
         adj.adj <- NULL
@@ -70,8 +71,9 @@ augmentation_matrix <-function(N,M,n,seed,rep,method,bucket,reg_par,var){
         #g <- graph_from_adjacency_matrix(adj.reg, weighted=T, mode="undirected")
         #adj <- NULL
         #g <- simplify(g)
-        l_matrix <- solve(sqrtm(deg.adj))%*%A%*%solve(sqrtm(deg.adj))
-        A <- NULL
+        l_matrix <- solve(sqrtm(deg.adj))%*%adj%*%solve(sqrtm(deg.adj))
+        deg.adj <- NULL
+        adj <- NULL
         #embed.s <- embed_laplacian_matrix(g, no=10, type='DAD',scaled = FALSE)
         eval <- eigs_sym(l_matrix,2,which = "LM")
 
