@@ -2,26 +2,15 @@
 #'
 #' \code{membership} returns a dataframe
 #'
-#' @param dat It is the result from partition_tree
+#' @param dat It is the result from build_tree
 #' @param A adjencency matrix
 
-#' @return A dataframe of membership matrix
+#' @return A dataframe of membership matrix and a dataframe for plotting
 #' @examples
-#' member <- membership(cluster_result,A)
+#' member <- membership(cluster_result)
 
 
-membership <- function(dat,A){
-
-  cluster_id_func <- function(k,tree.path,A){
-    node_index <- which(sapply(1:length(cluster_result$tree.path),function(j) substr(cluster_result$tree.path[j],1,2*k)==tree.path))
-
-    node_number <- as.integer(gsub('[^[:digit:].]+', '', cluster_result$tree.path[node_index]))
-    node_number <- node_number[which(!is.na(node_number))]
-
-    cluster_id <- rownames(A)[as.integer(node_number)]
-    return(cluster_id <- cluster_id)
-  }
-
+membership <- function(dat){
   tree_path_type <- unique(gsub('[[:digit:]]+', '', dat$tree.path))
   tree_path_type <- tree_path_type[c(-1)]
   level_total <- c()
@@ -30,6 +19,15 @@ membership <- function(dat,A){
   }
   level_total <- max(level_total)
 
+  cluster_id_func <- function(dat,k,tree.path){
+    node_index <- which(sapply(1:length(dat$tree.path),function(j) substr(dat$tree.path[j],1,2*k)==tree.path))
+
+    node_number <- as.integer(gsub('[^[:digit:].]+', '', dat$tree.path[node_index]))
+    node_number <- node_number[which(!is.na(node_number))]
+
+    cluster_id <- rownames(A)[as.integer(node_number)]
+    return(cluster_id <- cluster_id)
+  }
 
   grid_list <- list()
   grid <- list()
@@ -54,16 +52,73 @@ membership <- function(dat,A){
     colnames(cluster_dat)[i] <- paste("level.",i-1,sep = "")
   }
 
-  for (i in 2:(level_total+1)) {
-    colnames(cluster_dat)[i] <- paste("level-",i-1,sep = "")
-    cluster_dat[,i] <- gsub("L",0,cluster_dat[,i])
-    cluster_dat[,i] <- gsub("R",1,cluster_dat[,i])
-    cluster_dat[,i] <- str_remove_all(cluster_dat[,i],"/")
-    cluster_dat[,i] <- str_sub(cluster_dat[,i],-1,-1)
-    cluster_dat[is.na(cluster_dat)] <- "x"
-    cluster_dat[,c(-1)] <- lapply(cluster_dat[,c(-1)],factor)
+  nnodes=0
+  for (i in 2:ncol(cluster_dat)) {
+    nnodes <- nnodes+nlevels(cluster_dat[,i])
   }
-  return(cluster_dat <- cluster_dat)
+
+  n <- 1
+  for (i in 2:ncol(cluster_dat)) {
+    for (j in 1:nlevels(cluster_dat[,i])) {
+      levels(cluster_dat[,i])[j] <- n
+      n <- n+1
+    }
+  }
+
+  weight <- c()
+  text <- c(0)
+  n <- 1
+  for (i in 2:(ncol(cluster_dat)-1)) {
+    for (j in 1:nlevels(cluster_dat[,i])) {
+      elements <- cluster_dat[which(cluster_dat[,i]==levels(cluster_dat[,i])[j]),i+1]
+      if(!is.na(elements[1])){
+        weight <- c(weight,sum((cluster_dat[,i]==as.character(n)),na.rm = TRUE))
+      }
+      if(!is.na(elements[1])){
+        text <- c(text,levels(cluster_dat[,i])[j])
+      }
+      n <- n+1
+    }
+  }
+  n <- 1
+  for (i in 2:(ncol(cluster_dat)-1)) {
+    for (j in 1:nlevels(cluster_dat[,i])) {
+      elements <- cluster_dat[which(cluster_dat[,i]==levels(cluster_dat[,i])[j]),i+1]
+      if(is.na(elements[1])){
+        weight <- c(weight,sum((cluster_dat[,i]==as.character(n)),na.rm = TRUE))
+      }
+      if(is.na(elements[1])){
+        text <- c(text,levels(cluster_dat[,i])[j])
+      }
+      n <- n+1
+    }
+  }
+  text <- c(text,levels(cluster_dat[,ncol(cluster_dat)]))
+  for (j in 1:nlevels(cluster_dat[,(ncol(cluster_dat)-1)+1])) {
+    weight <- c(weight,sum((cluster_dat[,(ncol(cluster_dat)-1)+1]==as.character(n)),na.rm = TRUE))
+    n <- n+1
+  }
+  weight <- insert(weight,1,sum(weight[1]+weight[2]))
+
+
+  endnode <- c()
+  for (i in 3:ncol(cluster_dat)) {
+    endnode <- c(endnode,as.character(unique(cluster_dat[which(is.na(cluster_dat[,i])),i-1])))
+    endnode <- endnode[!is.na(endnode)]
+  }
+
+  parent <- c(0,0)
+  i=1
+  while (length(parent) < nnodes) {
+    if(i %in% as.numeric(endnode)){
+      i <- i+1
+    }else{
+      parent <- c(parent,rep(i,2))
+      i <- i+1
+    }
+  }
+  dat <- data.frame("parent"=parent,"node"=c(1:nnodes),"text"=rep(c(0,1),nnodes/2))
+  return(list("cluster_dat"=cluster_dat,"plot_dat"=dat))
 }
 
 

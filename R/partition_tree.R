@@ -55,11 +55,21 @@ build_tree <- function(f,xi.loc.labels, ncl, cl.labels,n.min=25,D=NULL){
     l_matrix <- solve(sqrtm(deg.adj))%*%adj%*%solve(sqrtm(deg.adj))
     adj <- NULL
     deg.adj <- NULL
-    eval <- eigs_sym(l_matrix,2,which = "LM")
-    embed.Y <- data.frame(eval$vectors)
+    eval <- eigs_sym(l_matrix,10,which = "LM")
+    eval.adj <- eval$vectors%*%diag(eval$values)
+    #eval <- irlba(l_matrix,2)
+    #eval.adj <- eval$u%*%diag(eval$d)
+    embed.slist <- eval$values[1]
+    m=1
+    while(embed.slist<as.numeric(0.95)*sum(eval$values)){
+      m=m+1
+      embed.slist <- embed.slist+eval$values[m]
+    }
+    embed.Y <- data.frame(eval.adj[,1:2])
     #embed.Y <- data.frame(embed.s$X[,1:2])
     row.names(embed.Y) <- V(g)$name
-    clustering <- kmeans(embed.Y,centers=2,iter.max=30,nstart=10)$cluster
+    #clustering <- kmeans(embed.Y,centers=2,iter.max=30,nstart=10)$cluster
+    clustering <- pam(embed.Y,k=2)$clustering
     clus = list(clustering=clustering)
     xi.f = clus$clustering
     xi.labels = lapply(1:2, function(x){which(xi.f == x)})
