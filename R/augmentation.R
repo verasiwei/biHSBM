@@ -14,7 +14,7 @@
 #' @param individual The individual id in the cluster that you want to see consistency
 #' @return
 #' @examples
-#' aug_result <- augmentation_matrix(20,2000,339,c(1:10),10,c("kmeans","hclust","eigensplit"),"jak2",0.1,0.9)
+#' aug_result <- augmentation_matrix(20,2000,339,c(1:10),10,c("kmeans","hclust","eigensplit"),"jak2",0.1,0.9,level2.R)
 
 augmentation_matrix <-function(N,M,n,seed,rep,method,bucket,reg_par,var,individual){
 
@@ -55,7 +55,7 @@ augmentation_matrix <-function(N,M,n,seed,rep,method,bucket,reg_par,var,individu
           A <- A+s3readRDS(object = paste("sbmmatrix_",j,".rds",sep = ""),bucket = bucket)
         }
         print(paste("finish augment",i,"_",k,sep = ""))
-        A <- A[which(rownames(A) %in% individual),which(colnames(A) %in% individual)]
+        A <- A[which(rownames(A) %in% individual),which(colnames(A) %in% individual)]/N
         #A <- A+as.numeric(reg_par)/nrow(A)
         g <- graph_from_adjacency_matrix(A, weighted=T, mode="undirected")
         g <- simplify(g)
@@ -81,13 +81,13 @@ augmentation_matrix <-function(N,M,n,seed,rep,method,bucket,reg_par,var,individu
         adj <- NULL
         #embed.s <- embed_laplacian_matrix(g, no=10, type='DAD',scaled = FALSE)
         eval <- eigs_sym(l_matrix,10,which = "LM")
-        eval.adj <- eval$vectors%*%diag(eval$values)
+        eval.adj <- eval$vectors%*%diag(abs(eval$values))
 
-        embed.slist <- eval$values[1]
+        embed.slist <- abs(eval$values[1])
         m=1
-        while(embed.slist<as.numeric(var)*sum(eval$values)){
+        while(embed.slist<as.numeric(var)*sum(abs(eval$values))){
           m=m+1
-          embed.slist <- embed.slist+eval$values[m]
+          embed.slist <- embed.slist+abs(eval$values[m])
         }
         embed.Y <- data.frame(eval.adj[,1:m])
         embed.Y2 <- data.frame(eval.adj[,1:2])
