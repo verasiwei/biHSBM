@@ -31,7 +31,7 @@ cleanSBM <- function(n, m, dat){
     while(length(miss)!=0){
       
         for (j in 1:length(miss)) {
-          node_to_cluster[[i]][[miss[j]]] <-run_sbm(phenome_dat_long)
+          node_to_cluster[[i]][[miss[j]]] <-run_sbm(dat)
         }
       
       miss <- which(sapply(node_to_cluster[[i]],function(x) nrow(x)==0))
