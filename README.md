@@ -1,11 +1,11 @@
-# Strong Consistency for Stochastic Block Model
+# Consistency for Stochastic Block Model
 
 This package works on consistency for stochastic block model.
 
 # Installation
 
 ```
-devtools::install_github("tbilab/sbmSC")
+devtools::install_github("tbilab/bisbmSC")
 
 library(tidyverse)
 library(furrr)
