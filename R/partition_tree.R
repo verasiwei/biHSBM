@@ -6,11 +6,12 @@
 #' @param xi.loc.labels lists of index of each cluster
 #' @param ncl number of clusters
 #' @param cl.labels a vector of index of individuals
+#' @param method Partition method
 #' @return Lists of cluster results
 #' @examples
-#' cluster_result <- build_tree(adj,xi.loc.labels=list(), ncl=0, cl.labels=1:339,n.min=25,D=NULL)
+#' cluster_result <- build_tree(adj,xi.loc.labels=list(), ncl=0, cl.labels=1:339,n.min=25,D=NULL,method)
 
-build_tree <- function(f,xi.loc.labels, ncl, cl.labels,n.min=25,D=NULL){
+build_tree <- function(f,xi.loc.labels, ncl, cl.labels,n.min=25,D=NULL,method){
   nisol = which(rowSums(f) > 0)
   isol = which(rowSums(f) == 0)
   cl.labels.full <- cl.labels
@@ -50,26 +51,43 @@ build_tree <- function(f,xi.loc.labels, ncl, cl.labels,n.min=25,D=NULL){
     g <- graph_from_adjacency_matrix(as.matrix(f), weighted=T, mode="undirected")
     g <- simplify(g)
     adj <- get.adjacency(g,type = "both",attr = "weight")
+    if(method == "eigen"){
+      adj.adj <- adj+as.numeric(0.1)/nrow(adj)
+      eval <- eigs_sym(adj.adj,2,which="LM")
+      clustering <- ifelse(eval$vectors[,2]<0,1,2)
+      adj.adj <- NULL
+    } else if (method == "kmeans2") {
     deg.adj <- diag(strength(g))+diag(rep(0.1,nrow(f)))
-
     l_matrix <- solve(sqrtm(deg.adj))%*%adj%*%solve(sqrtm(deg.adj))
     adj <- NULL
     deg.adj <- NULL
     eval <- eigs_sym(l_matrix,10,which = "LM")
-    eval.adj <- eval$vectors%*%diag(eval$values)
-    #eval <- irlba(l_matrix,2)
-    #eval.adj <- eval$u%*%diag(eval$d)
-    embed.slist <- eval$values[1]
-    m=1
-    while(embed.slist<as.numeric(0.95)*sum(eval$values)){
-      m=m+1
-      embed.slist <- embed.slist+eval$values[m]
-    }
+    eval.adj <- eval$vectors%*%diag(abs(eval$values))
     embed.Y <- data.frame(eval.adj[,1:2])
     #embed.Y <- data.frame(embed.s$X[,1:2])
     row.names(embed.Y) <- V(g)$name
     #clustering <- kmeans(embed.Y,centers=2,iter.max=30,nstart=10)$cluster
     clustering <- pam(embed.Y,k=2)$clustering
+    } else if (method == "kmeansweight") {
+    deg.adj <- diag(strength(g))+diag(rep(0.1,nrow(f)))
+    l_matrix <- solve(sqrtm(deg.adj))%*%adj%*%solve(sqrtm(deg.adj))
+    adj <- NULL
+    deg.adj <- NULL
+    eval <- eigs_sym(l_matrix,10,which = "LM")
+    eval.adj <- eval$vectors%*%diag(abs(eval$values))
+    embed.slist <- abs(eval$values[1])
+    m=1
+    while(embed.slist<as.numeric(0.95)*sum(abs(eval$values))){
+      m=m+1
+      embed.slist <- embed.slist+abs(eval$values[m])
+    }
+    embed.Y <- data.frame(eval.adj[,1:m])
+    #embed.Y <- data.frame(embed.s$X[,1:2])
+    row.names(embed.Y) <- V(g)$name
+    #clustering <- kmeans(embed.Y,centers=2,iter.max=30,nstart=10)$cluster
+    clustering <- pam(embed.Y,k=2)$clustering
+    }
+  
     clus = list(clustering=clustering)
     xi.f = clus$clustering
     xi.labels = lapply(1:2, function(x){which(xi.f == x)})
@@ -85,7 +103,7 @@ build_tree <- function(f,xi.loc.labels, ncl, cl.labels,n.min=25,D=NULL){
     }
 
     if(n1 > 2*n.min) { ## only do further clustering on cluster larger  2*n.min
-      res = build_tree(f1,xi.loc.labels, ncl, a1.labels,n.min,D=D-1)
+      res = build_tree(f1,xi.loc.labels, ncl, a1.labels,n.min,D=D-1,method)
       xi.loc.labels = res$xi.loc.labels
       ncl = res$ncl
       L.tree.path <- res$tree.path
@@ -120,7 +138,7 @@ build_tree <- function(f,xi.loc.labels, ncl, cl.labels,n.min=25,D=NULL){
       n1 <- 0
     }
     if(n1 > 2*n.min) {
-      res = build_tree(f2,xi.loc.labels, ncl, a2.labels,n.min,D=D-1)
+      res = build_tree(f2,xi.loc.labels, ncl, a2.labels,n.min,D=D-1,method)
       xi.loc.labels = res$xi.loc.labels
       R.tree.path <- res$tree.path
       R.mod.path <- res$mod.path

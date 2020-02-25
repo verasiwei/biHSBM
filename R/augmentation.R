@@ -10,13 +10,13 @@
 #' @param method The method, kmeans, hclust or eigensplit
 #' @param bucket The bucket where you save the sbm affinity matrix
 #' @param reg_par The parameter value of regularization
-#' @param var The percentage explaine the variation
+#' @param var The percentage explain the variation
 #' @param individual The individual id in the cluster that you want to see consistency
 #' @return
 #' @examples
-#' aug_result <- augmentation_matrix(20,2000,339,c(1:10),10,c("kmeans","hclust","eigensplit"),"jak2",0.1,0.9,level2.R)
+#' aug_result <- augmentation_matrix(20,2000,339,c(1:10),10,c("kmeans","hclust","eigensplit"),"jak2",0.1,0.9,level2.R,resample=TRUE)
 
-augmentation_matrix <-function(N,M,n,seed,rep,method,bucket,reg_par,var,individual){
+augmentation_matrix <-function(N,M,n,seed,rep,method,bucket,reg_par,var,individual,resample){
 
   augmentation_index <- function(N,M,seed,rep){
     index_list <- list()
@@ -51,12 +51,22 @@ augmentation_matrix <-function(N,M,n,seed,rep,method,bucket,reg_par,var,individu
       embed.eigen <- list()
       for (k in 1:rep) {
         A <- matrix(0,n,n)
+        I <- matrix(0,n,n)
         for (j in augmentation_index(N,M,seed,rep)[[i]][[k]]) {
-          A <- A+s3readRDS(object = paste("sbmmatrix_",j,".rds",sep = ""),bucket = bucket)
+          A <- A+s3readRDS(object = paste("sbmmatrix_",j,".rds",sep = ""),bucket = bucket,check_region=F)[[1]]
+          if(resample == TRUE){
+            I <- I+s3readRDS(object = paste("sbmmatrix_",j,".rds",sep = ""),bucket = bucket,check_region=F)[[2]]
+          }
         }
         print(paste("finish augment",i,"_",k,sep = ""))
-        A <- A[which(rownames(A) %in% individual),which(colnames(A) %in% individual)]/N
+        A <- A[which(rownames(A) %in% individual),which(colnames(A) %in% individual)]
+        A <- A/N
         #A <- A+as.numeric(reg_par)/nrow(A)
+        if(resample == TRUE){
+          I <- I[which(rownames(I) %in% individual),which(colnames(I) %in% individual)]
+          A <- A/I
+        }
+          
         g <- graph_from_adjacency_matrix(A, weighted=T, mode="undirected")
         g <- simplify(g)
         adj <- get.adjacency(g,type = "both",attr = "weight")
@@ -81,7 +91,7 @@ augmentation_matrix <-function(N,M,n,seed,rep,method,bucket,reg_par,var,individu
         adj <- NULL
         #embed.s <- embed_laplacian_matrix(g, no=10, type='DAD',scaled = FALSE)
         eval <- eigs_sym(l_matrix,10,which = "LM")
-        eval.adj <- eval$vectors%*%diag(abs(eval$values))
+        eval.adj <- eval$vectors%*%abs(diag(eval$values))
 
         embed.slist <- abs(eval$values[1])
         m=1

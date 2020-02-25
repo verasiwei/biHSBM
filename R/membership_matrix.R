@@ -7,10 +7,10 @@
 
 #' @return A dataframe of membership matrix and a dataframe for plotting
 #' @examples
-#' member <- membership(cluster_result)
+#' member <- membership_dat(cluster_result)
 
 
-membership <- function(dat){
+membership_str <- function(dat,A){
   tree_path_type <- unique(gsub('[[:digit:]]+', '', dat$tree.path))
   tree_path_type <- tree_path_type[c(-1)]
   level_total <- c()
@@ -19,7 +19,7 @@ membership <- function(dat){
   }
   level_total <- max(level_total)
 
-  cluster_id_func <- function(dat,k,tree.path){
+  cluster_id_func <- function(dat,k,tree.path,A){
     node_index <- which(sapply(1:length(dat$tree.path),function(j) substr(dat$tree.path[j],1,2*k)==tree.path))
 
     node_number <- as.integer(gsub('[^[:digit:].]+', '', dat$tree.path[node_index]))
@@ -28,12 +28,11 @@ membership <- function(dat){
     cluster_id <- rownames(A)[as.integer(node_number)]
     return(cluster_id <- cluster_id)
   }
-
   grid_list <- list()
   grid <- list()
   for (i in 1:level_total) {
     for (j in tree_path_type[which(str_count(tree_path_type,"/")==i)]) {
-      grid[[j]] <- cluster_id_func(i,j,A)
+      grid[[j]] <- cluster_id_func(dat,i,j,A)
     }
     grid_list[[i]] <- grid
     grid <- list()
@@ -118,7 +117,7 @@ membership <- function(dat){
     }
   }
   dat <- data.frame("parent"=parent,"node"=c(1:nnodes),"text"=rep(c(0,1),nnodes/2))
-  return(list("cluster_dat"=cluster_dat,"plot_dat"=dat))
+  return(list("cluster_dat"=cluster_dat,"plot_dat"=dat,"weight"=weight))
 }
 
 

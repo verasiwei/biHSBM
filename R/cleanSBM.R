@@ -19,7 +19,7 @@ cleanSBM <- function(n, m, dat){
   start <- Sys.time()
   node_to_cluster <- foreach(i=1:m) %dopar% {
     library(dplyr)
-    devtools::load_all("/home/siwei/pheSBMR")
+    library(pheSBMR)
     lapply(phenome_dat_long_list, run_sbm)
   }
   stopCluster(mycluster)
@@ -29,9 +29,8 @@ cleanSBM <- function(n, m, dat){
   for (i in 1:m) {
     miss <- which(sapply(node_to_cluster[[i]],function(x) nrow(x)==0))
     while(length(miss)!=0){
-      
         for (j in 1:length(miss)) {
-          node_to_cluster[[i]][[miss[j]]] <-run_sbm(dat)
+          node_to_cluster[[i]][[miss[j]]] <- run_sbm(dat)
         }
       
       miss <- which(sapply(node_to_cluster[[i]],function(x) nrow(x)==0))
@@ -47,6 +46,6 @@ cleanSBM <- function(n, m, dat){
     }
   }
 
-  return(sbmresults)
+  return(node_to_cluster)
 }
 
